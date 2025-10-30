@@ -1,0 +1,161 @@
+@page "/admin"
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.SignalR.Client
+@using Microsoft.EntityFrameworkCore
+@attribute [Authorize(Roles = "Admin")]
+@inject ApplicationDbContext DbContext
+@inject NavigationManager Navigation
+@inject IHubContext<OrderHub> HubContext
+@rendermode InteractiveServer
+@implements IAsyncDisposable
+
+<PageTitle>Admin Dashboard - Delivery App</PageTitle>
+
+<div class="page-header">
+    <h2>Admin Dashboard</h2>
+    <p class="subtitle">Manage all delivery orders</p>
+</div>
+
+@if (!string.IsNullOrEmpty(successMessage))
+{
+    <div class="alert alert-success">@successMessage</div>
+}
+
+<div class="filter-tabs">
+    <button class="tab-btn @(selectedTab == "All" ? "active" : "")" @onclick="@(() => FilterOrders("All"))">
+        All (@orders?.Count ?? 0)
+    </button>
+    <button class="tab-btn @(selectedTab == "Pending" ? "active" : "")" @onclick="@(() => FilterOrders("Pending"))">
+        Pending (@orders?.Count(o => o.Status == "Pending") ?? 0)
+    </button>
+    <button class="tab-btn @(selectedTab == "In Progress" ? "active" : "")" @onclick="@(() => FilterOrders("In Progress"))">
+        In Progress (@orders?.Count(o => o.Status == "In Progress") ?? 0)
+    </button>
+    <button class="tab-btn @(selectedTab == "Completed" ? "active" : "")" @onclick="@(() => FilterOrders("Completed"))">
+        Completed (@orders?.Count(o => o.Status == "Completed") ?? 0)
+    </button>
+</div>
+
+@if (filteredOrders == null)
+{
+    <p>Loading...</p>
+}
+else if (!filteredOrders.Any())
+{
+    <div class="empty-state">
+        <p>No orders found.</p>
+    </div>
+}
+else
+{
+    <div class="admin-orders-grid">
+        @foreach (var order in filteredOrders.OrderByDescending(o => o.CreatedAt))
+        {
+            <div class="admin-order-card">
+                <div class="order-header">
+                    <span class="order-id">Order #@order.Id</span>
+                    <span class="order-status status-@order.Status.ToLower().Replace(" ", "-")">@order.Status</span>
+                </div>
+                <div class="order-body">
+                    <p><strong>Customer:</strong> @order.User?.Email</p>
+                    <p><strong>Description:</strong> @order.Description</p>
+                    <p><strong>Location:</strong> @order.Location</p>
+                    <p><strong>Time Needed:</strong> @order.EstimatedTime</p>
+                    <p><strong>Created:</strong> @order.CreatedAt.ToString("MMM dd, yyyy hh:mm tt")</p>
+                </div>
+                <div class="order-actions">
+                    @if (order.Status == "Pending")
+                    {
+                        <button class="btn btn-sm btn-primary" @onclick="@(() => UpdateOrderStatus(order.Id, "In Progress"))">
+                            Accept Order
+                        </button>
+                    }
+                    @if (order.Status == "In Progress")
+                    {
+                        <button class="btn btn-sm btn-success" @onclick="@(() => UpdateOrderStatus(order.Id, "Completed"))">
+                            Mark as Completed
+                        </button>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    private List<Order>? orders;
+    private List<Order>? filteredOrders;
+    private HubConnection? hubConnection;
+    private string selectedTab = "All";
+    private string? successMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadOrders();
+        await InitializeSignalR();
+    }
+
+    private async Task LoadOrders()
+    {
+        orders = await DbContext.Orders
+            .Include(o => o.User)
+            .ToListAsync();
+        
+        FilterOrders(selectedTab);
+    }
+
+    private void FilterOrders(string status)
+    {
+        selectedTab = status;
+        
+        if (orders == null) return;
+
+        filteredOrders = status == "All" 
+            ? orders 
+            : orders.Where(o => o.Status == status).ToList();
+    }
+
+    private async Task UpdateOrderStatus(int orderId, string newStatus)
+    {
+        var order = await DbContext.Orders.FindAsync(orderId);
+        if (order != null)
+        {
+            order.Status = newStatus;
+            await DbContext.SaveChangesAsync();
+
+            // Send real-time notification
+            await HubContext.Clients.All.SendAsync("ReceiveOrderUpdate", $"Order #{orderId} status updated to {newStatus}");
+
+            successMessage = $"Order #{orderId} status updated to {newStatus}";
+            await LoadOrders();
+            StateHasChanged();
+
+            await Task.Delay(3000);
+            successMessage = null;
+            StateHasChanged();
+        }
+    }
+
+    private async Task InitializeSignalR()
+    {
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl(Navigation.ToAbsoluteUri("/orderhub"))
+            .Build();
+
+        hubConnection.On<string>("ReceiveOrderUpdate", async (message) =>
+        {
+            await LoadOrders();
+            await InvokeAsync(StateHasChanged);
+        });
+
+        await hubConnection.StartAsync();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (hubConnection is not null)
+        {
+            await hubConnection.DisposeAsync();
+        }
+    }
+}

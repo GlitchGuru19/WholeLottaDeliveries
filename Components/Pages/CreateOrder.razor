@@ -1,0 +1,122 @@
+@page "/create-order"
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.SignalR.Client
+@attribute [Authorize(Roles = "User")]
+@inject ApplicationDbContext DbContext
+@inject UserManager<ApplicationUser> UserManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager Navigation
+@inject IHubContext<OrderHub> HubContext
+@rendermode InteractiveServer
+
+<PageTitle>Create Order - Delivery App</PageTitle>
+
+<div class="page-header">
+    <h2>Create New Order</h2>
+</div>
+
+@if (!string.IsNullOrEmpty(successMessage))
+{
+    <div class="alert alert-success">@successMessage</div>
+}
+
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-error">@errorMessage</div>
+}
+
+<div class="form-container">
+    <EditForm Model="orderModel" OnValidSubmit="HandleCreateOrder" FormName="CreateOrderForm">
+        <DataAnnotationsValidator />
+        
+        <div class="form-group">
+            <label for="description">Order Description</label>
+            <InputTextArea id="description" @bind-Value="orderModel.Description" class="form-control" rows="4" placeholder="e.g., K50 for 2L Milk and K5 for a pen" />
+            <ValidationMessage For="@(() => orderModel.Description)" />
+        </div>
+
+        <div class="form-group">
+            <label for="location">Delivery Location</label>
+            <InputSelect id="location" @bind-Value="orderModel.Location" class="form-control">
+                <option value="">-- Select Location --</option>
+                <option value="Town">Town</option>
+                <option value="VML Market">VML Market</option>
+                <option value="Campus">Campus</option>
+                <option value="Mukuba Mall">Mukuba Mall</option>
+            </InputSelect>
+            <ValidationMessage For="@(() => orderModel.Location)" />
+        </div>
+
+        <div class="form-group">
+            <label for="estimatedTime">Time Needed (e.g., 2:30 PM)</label>
+            <InputText id="estimatedTime" type="time" @bind-Value="orderModel.EstimatedTime" class="form-control" />
+            <ValidationMessage For="@(() => orderModel.EstimatedTime)" />
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Submit Order</button>
+            <a href="/dashboard" class="btn btn-secondary">Cancel</a>
+        </div>
+    </EditForm>
+</div>
+
+@code {
+    [SupplyParameterFromForm]
+    private OrderModel orderModel { get; set; } = new();
+    
+    private string? successMessage;
+    private string? errorMessage;
+
+    private async Task HandleCreateOrder()
+    {
+        try
+        {
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            var user = await UserManager.GetUserAsync(authState.User);
+
+            if (user == null)
+            {
+                errorMessage = "User not found. Please log in again.";
+                return;
+            }
+
+            var order = new Order
+            {
+                UserId = user.Id,
+                Description = orderModel.Description,
+                Location = orderModel.Location,
+                EstimatedTime = orderModel.EstimatedTime,
+                Status = "Pending",
+                CreatedAt = DateTime.Now
+            };
+
+            DbContext.Orders.Add(order);
+            await DbContext.SaveChangesAsync();
+
+            await HubContext.Clients.All.SendAsync("ReceiveOrderUpdate", "New order created");
+
+            successMessage = "Order created successfully!";
+            orderModel = new();
+            
+            await Task.Delay(2000);
+            Navigation.NavigateTo("/dashboard");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error creating order: {ex.Message}";
+        }
+    }
+
+    public class OrderModel
+    {
+        [Required(ErrorMessage = "Please describe what you need")]
+        [StringLength(1000, MinimumLength = 5)]
+        public string Description { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Please select a delivery location")]
+        public string Location { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Please enter the time you need the items")]
+        public string EstimatedTime { get; set; } = string.Empty;
+    }
+}

@@ -1,0 +1,46 @@
+@inherits LayoutComponentBase
+
+<div class="page">
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <h1 class="logo">🚚 Delivery App</h1>
+                <nav class="nav">
+                    <AuthorizeView>
+                        <Authorized>
+                            <AuthorizeView Roles="Admin" Context="adminContext">
+                                <Authorized>
+                                    <a href="/admin" class="nav-link">Admin Dashboard</a>
+                                </Authorized>
+                            </AuthorizeView>
+                            <AuthorizeView Roles="User" Context="userContext">
+                                <Authorized>
+                                    <a href="/dashboard" class="nav-link">My Orders</a>
+                                    <a href="/create-order" class="nav-link">New Order</a>
+                                </Authorized>
+                            </AuthorizeView>
+                            <span class="nav-user">@context.User.Identity?.Name</span>
+                            <a href="/logout" class="nav-link">Logout</a>
+                        </Authorized>
+                        <NotAuthorized>
+                            <a href="/login" class="nav-link">Login</a>
+                            <a href="/register" class="nav-link">Register</a>
+                        </NotAuthorized>
+                    </AuthorizeView>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <div class="container">
+            @Body
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; @DateTime.Now.Year Delivery App. All rights reserved.</p>
+        </div>
+    </footer>
+</div>

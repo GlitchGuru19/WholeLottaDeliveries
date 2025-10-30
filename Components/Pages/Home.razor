@@ -1,0 +1,47 @@
+@page "/"
+
+<PageTitle>Home - Delivery App</PageTitle>
+
+<div class="hero">
+    <h1>Welcome to Delivery App 🚚</h1>
+    <p class="hero-subtitle">Get what you need, delivered to your location.</p>
+    
+    <AuthorizeView>
+        <Authorized>
+            <AuthorizeView Roles="Admin" Context="adminContext">
+                <Authorized>
+                    <a href="/admin" class="btn btn-primary btn-lg">Go to Admin Dashboard</a>
+                </Authorized>
+            </AuthorizeView>
+            <AuthorizeView Roles="User" Context="userContext">
+                <Authorized>
+                    <div class="hero-buttons">
+                        <a href="/create-order" class="btn btn-primary btn-lg">Create New Order</a>
+                        <a href="/dashboard" class="btn btn-secondary btn-lg">View My Orders</a>
+                    </div>
+                </Authorized>
+            </AuthorizeView>
+        </Authorized>
+        <NotAuthorized>
+            <div class="hero-buttons">
+                <a href="/register" class="btn btn-primary btn-lg">Get Started</a>
+                <a href="/login" class="btn btn-secondary btn-lg">Login</a>
+            </div>
+        </NotAuthorized>
+    </AuthorizeView>
+</div>
+
+<div class="features">
+    <div class="feature-card">
+        <h3>📍 Multiple Locations</h3>
+        <p>Town, VML Market, Campus, and Mukuba Mall</p>
+    </div>
+    <div class="feature-card">
+        <h3>⏱️ Quick Delivery</h3>
+        <p>Set your preferred delivery time</p>
+    </div>
+    <div class="feature-card">
+        <h3>📱 Real-time Updates</h3>
+        <p>Track your order status in real-time</p>
+    </div>
+</div>

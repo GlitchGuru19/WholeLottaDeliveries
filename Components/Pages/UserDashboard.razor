@@ -1,0 +1,97 @@
+@page "/dashboard"
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.SignalR.Client
+@using Microsoft.EntityFrameworkCore
+@attribute [Authorize(Roles = "User")]
+@inject ApplicationDbContext DbContext
+@inject UserManager<ApplicationUser> UserManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+@implements IAsyncDisposable
+
+<PageTitle>My Orders - Delivery App</PageTitle>
+
+<div class="page-header">
+    <h2>My Orders</h2>
+    <a href="/create-order" class="btn btn-primary">Create New Order</a>
+</div>
+
+@if (orders == null)
+{
+    <p>Loading...</p>
+}
+else if (!orders.Any())
+{
+    <div class="empty-state">
+        <p>You haven't created any orders yet.</p>
+        <a href="/create-order" class="btn btn-primary">Create Your First Order</a>
+    </div>
+}
+else
+{
+    <div class="orders-grid">
+        @foreach (var order in orders.OrderByDescending(o => o.CreatedAt))
+        {
+            <div class="order-card">
+                <div class="order-header">
+                    <span class="order-id">Order #@order.Id</span>
+                    <span class="order-status status-@order.Status.ToLower().Replace(" ", "-")">@order.Status</span>
+                </div>
+                <div class="order-body">
+                    <p><strong>Description:</strong> @order.Description</p>
+                    <p><strong>Location:</strong> @order.Location</p>
+                    <p><strong>Time Needed:</strong> @order.EstimatedTime</p>
+                    <p><strong>Created:</strong> @order.CreatedAt.ToString("MMM dd, yyyy hh:mm tt")</p>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    private List<Order>? orders;
+    private HubConnection? hubConnection;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadOrders();
+        await InitializeSignalR();
+    }
+
+    private async Task LoadOrders()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = await UserManager.GetUserAsync(authState.User);
+
+        if (user != null)
+        {
+            orders = await DbContext.Orders
+                .Where(o => o.UserId == user.Id)
+                .ToListAsync();
+        }
+    }
+
+    private async Task InitializeSignalR()
+    {
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl(Navigation.ToAbsoluteUri("/orderhub"))
+            .Build();
+
+        hubConnection.On<string>("ReceiveOrderUpdate", async (message) =>
+        {
+            await LoadOrders();
+            await InvokeAsync(StateHasChanged);
+        });
+
+        await hubConnection.StartAsync();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (hubConnection is not null)
+        {
+            await hubConnection.DisposeAsync();
+        }
+    }
+}
