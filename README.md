@@ -214,7 +214,7 @@ Ensure the SignalR CDN script is loading. Check browser console for errors.
 ## 📝 Notes
 
 - Payments are handled in person (no payment integration)
-- The SQLite database file (`DeliveryApp.db`) will be created in the Data folder 
+- The SQLite database file (`DeliveryApp.db`) will be creatd in the Data folder 
 - Admin user is created automatically on first run
 - All timestamps are in local time
 

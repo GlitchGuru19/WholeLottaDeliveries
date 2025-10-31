@@ -2,8 +2,8 @@
 
 ## Changes Made
 
-### 1. Removed XML Documentation Comments
-All verbose XML documentation (`/// <summary>`) removed from:
+### 1. Removed very detailed Comments
+All verbose comments removed from:
 - ✅ `Data/Order.cs`
 - ✅ `Data/ApplicationUser.cs`
 - ✅ `Data/ApplicationDbContext.cs`
@@ -38,7 +38,7 @@ public string EstimatedTime { get; set; } = string.Empty;
 ```
 
 ### 3. Tone Updated
-All documentation now uses professional, self-imposed tone (not "your code" or "we made this for you").
+All documentation now uses professional, self-imposed tone
 
 ---
 
@@ -167,13 +167,12 @@ Program.cs                    - Clean configuration
 Components/Pages/*.razor      - Clean Razor pages
 ```
 
-No XML docs, no verbose comments, just clean production code.
+No verbose comments, just clean production code.
 
 ---
 
 ## Summary
 
-✅ Removed all XML documentation comments  
 ✅ Changed EstimatedTime to string for time input  
 ✅ Updated all displays to show time correctly  
 ✅ Fixed tone in all documentation  

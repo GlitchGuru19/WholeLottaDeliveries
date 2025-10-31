@@ -31,7 +31,7 @@ This document provides an index of all the comprehensive comments and documentat
 ### 2. **Data Models** ⭐⭐⭐
 
 #### **ApplicationUser.cs**
-- XML documentation comments
+- documentation comments
 - Navigation property explanations
 - One-to-Many relationship details
 
@@ -312,18 +312,18 @@ var result = await SomeMethod();
 
 ## 📊 Documentation Coverage
 
-| File/Area | Comment Coverage | Documentation |
-|-----------|-----------------|---------------|
-| Program.cs | ⭐⭐⭐⭐⭐ | Comprehensive |
-| Data Models | ⭐⭐⭐⭐⭐ | XML Docs + Inline |
-| SignalR Hub | ⭐⭐⭐⭐⭐ | Comprehensive |
-| Auth Components | ⭐⭐⭐⭐⭐ | Comprehensive |
-| CreateOrder.razor | ⭐⭐⭐⭐⭐ | Comprehensive |
-| Login.razor | ⭐⭐⭐⭐⭐ | Comprehensive |
-| Other Razor Pages | ⭐⭐⭐ | Moderate |
-| CSS Files | ⭐⭐ | Section headers |
-| Architecture Guide | ⭐⭐⭐⭐⭐ | External Doc |
-| .NET 9 Guide | ⭐⭐⭐⭐⭐ | External Doc |
+| File/Area         | Comment Coverage   | Documentation    |
+|-----------        |-----------------   |---------------   |
+| Program.cs        | ⭐⭐⭐⭐⭐       | Comprehensive    |
+| Data Models       | ⭐⭐⭐⭐⭐      | XML Docs + Inline |
+| SignalR Hub       | ⭐⭐⭐⭐⭐      | Comprehensive |
+| Auth Components   | ⭐⭐⭐⭐⭐      | Comprehensive |
+| CreateOrder.razor | ⭐⭐⭐⭐⭐      | Comprehensive |
+| Login.razor       | ⭐⭐⭐⭐⭐      | Comprehensive |
+| Other Razor Pages | ⭐⭐⭐           | Moderate |
+| CSS Files         | ⭐⭐              | Section headers |
+| Architecture Guide| ⭐⭐⭐⭐⭐      | External Doc |
+| .NET 9 Guide      | ⭐⭐⭐⭐⭐      | External Doc |
 
 ---
 
@@ -331,14 +331,13 @@ var result = await SomeMethod();
 
 ### When adding new features:
 1. **Add file header** explaining purpose
-2. **Add XML docs** for public methods/properties
+2. **Add docs** for public methods/properties
 3. **Add inline comments** for complex logic
 4. **Update ARCHITECTURE.md** if changing structure
 5. **Update README.md** if adding user-facing features
 
 ### Comment checklist for new code:
 - [ ] File has header comment
-- [ ] Public methods have XML documentation
 - [ ] Complex logic has inline comments
 - [ ] Data models have property documentation
 - [ ] Forms have validation documentation

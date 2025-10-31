@@ -2,7 +2,7 @@
 
 ## What Type of Project is This?
 
-### In Visual Studio 2022/2025
+### In Visual Studio 2022/2026
 
 When creating a new project like this in Visual Studio, select:
 
@@ -211,7 +211,7 @@ This project uses:
 
 ```bash
 # Clone the project
-git clone <repository-url>
+git clone <repository-url> (https://github.com/GlitchGuru19/WholeLottaDeliveries.git)
 
 # Restore packages
 dotnet restore
@@ -331,7 +331,7 @@ app.MapRazorPages();  // Add this for Razor Pages
 
 **A:** Yes, with considerations:
 - Tighten security settings
-- Use production database (SQL Server, PostgreSQL)
+- Use production database (SQL Server, PostgreSQL) though i don't like SQL server
 - Enable proper logging
 - Add error handling
 - Implement caching

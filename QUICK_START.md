@@ -140,7 +140,8 @@ dotnet ef database update
 ```
 
 ### Can't Login as Admin?
-The admin account is created automatically on first run. Check the console logs for any errors.
+The admin account is created automatically on first run.
+Check the console logs for any errors.
 
 ## 🎉 Enjoy Your Delivery App!
 
