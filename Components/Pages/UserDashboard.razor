@@ -1,10 +1,8 @@
 @page "/dashboard"
-@using Microsoft.AspNetCore.Identity
 @using Microsoft.AspNetCore.SignalR.Client
-@using Microsoft.EntityFrameworkCore
+@using WholeLottaDeliveries.Services
 @attribute [Authorize(Roles = "User")]
-@inject ApplicationDbContext DbContext
-@inject UserManager<ApplicationUser> UserManager
+@inject OrderService OrderService
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NavigationManager Navigation
 @rendermode InteractiveServer
@@ -17,21 +15,49 @@
     <a href="/create-order" class="btn btn-primary">Create New Order</a>
 </div>
 
+@if (!string.IsNullOrEmpty(successMessage))
+{
+    <div class="alert alert-success">@successMessage</div>
+}
+
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-error">@errorMessage</div>
+}
+
+<div class="filter-tabs">
+    <button class="tab-btn @(selectedFilter == "All" ? "active" : "")" @onclick='() => SetFilter("All")'>
+        All Orders
+    </button>
+    <button class="tab-btn @(selectedFilter == "ThisWeek" ? "active" : "")" @onclick='() => SetFilter("ThisWeek")'>
+        This Week
+    </button>
+    <button class="tab-btn @(selectedFilter == "ThisMonth" ? "active" : "")" @onclick='() => SetFilter("ThisMonth")'>
+        This Month
+    </button>
+    <button class="tab-btn @(selectedFilter == "Last30Days" ? "active" : "")" @onclick='() => SetFilter("Last30Days")'>
+        Last 30 Days
+    </button>
+</div>
+
 @if (orders == null)
 {
     <p>Loading...</p>
 }
-else if (!orders.Any())
+else if (!FilteredOrders.Any())
 {
     <div class="empty-state">
-        <p>You haven't created any orders yet.</p>
-        <a href="/create-order" class="btn btn-primary">Create Your First Order</a>
+        <p>No orders found for the selected filter.</p>
+        @if (!orders.Any())
+        {
+            <a href="/create-order" class="btn btn-primary">Create Your First Order</a>
+        }
     </div>
 }
 else
 {
     <div class="orders-grid">
-        @foreach (var order in orders.OrderByDescending(o => o.CreatedAt))
+        @foreach (var order in FilteredOrders.OrderByDescending(o => o.CreatedAt))
         {
             <div class="order-card">
                 <div class="order-header">
@@ -42,8 +68,31 @@ else
                     <p><strong>Description:</strong> @order.Description</p>
                     <p><strong>Location:</strong> @order.Location</p>
                     <p><strong>Time Needed:</strong> @order.EstimatedTime</p>
+                    @if (!string.IsNullOrEmpty(order.DeliveryInstructions))
+                    {
+                        <p><strong>Instructions:</strong> @order.DeliveryInstructions</p>
+                    }
                     <p><strong>Created:</strong> @order.CreatedAt.ToString("MMM dd, yyyy hh:mm tt")</p>
+                    <p><strong>For Payments</strong></p>
+                    <p><strong>MTN    | +26076xxxxxxx</strong></p>
+                    <p><strong>Airtel | +26097xxxxxxx</strong></p>
                 </div>
+                @if (order.Status == "Pending")
+                {
+                    <div class="order-actions">
+                        <button class="btn btn-danger btn-sm" @onclick="() => CancelOrder(order.Id)" disabled="@isCancelling">
+                            @if (isCancelling && cancellingOrderId == order.Id)
+                            {
+                                <span class="spinner"></span>
+                                <span>Cancelling...</span>
+                            }
+                            else
+                            {
+                                <span>Cancel Order</span>
+                            }
+                        </button>
+                    </div>
+                }
             </div>
         }
     </div>
@@ -52,6 +101,29 @@ else
 @code {
     private List<Order>? orders;
     private HubConnection? hubConnection;
+    private string? successMessage;
+    private string? errorMessage;
+    private bool isCancelling = false;
+    private int cancellingOrderId = 0;
+    private string selectedFilter = "All";
+
+    // Property to get filtered orders based on selected date range
+    private IEnumerable<Order> FilteredOrders
+    {
+        get
+        {
+            if (orders == null) return Enumerable.Empty<Order>();
+
+            var now = DateTime.Now;
+            return selectedFilter switch
+            {
+                "ThisWeek" => orders.Where(o => o.CreatedAt >= now.AddDays(-7)),
+                "ThisMonth" => orders.Where(o => o.CreatedAt >= now.AddMonths(-1)),
+                "Last30Days" => orders.Where(o => o.CreatedAt >= now.AddDays(-30)),
+                _ => orders // "All" or default
+            };
+        }
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -59,17 +131,53 @@ else
         await InitializeSignalR();
     }
 
+    private void SetFilter(string filter)
+    {
+        selectedFilter = filter;
+    }
+
     private async Task LoadOrders()
     {
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-        var user = await UserManager.GetUserAsync(authState.User);
+        var userId = authState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
 
-        if (user != null)
+        if (!string.IsNullOrEmpty(userId))
         {
-            orders = await DbContext.Orders
-                .Where(o => o.UserId == user.Id)
-                .ToListAsync();
+            orders = await OrderService.GetUserOrdersAsync(userId);
         }
+    }
+
+    private async Task CancelOrder(int orderId)
+    {
+        isCancelling = true;
+        cancellingOrderId = orderId;
+        errorMessage = null;
+        successMessage = null;
+
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var userId = authState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
+        if (string.IsNullOrEmpty(userId))
+        {
+            errorMessage = "User not found. Please log in again.";
+            isCancelling = false;
+            return;
+        }
+
+        var (success, error) = await OrderService.CancelOrderAsync(orderId, userId);
+
+        if (success)
+        {
+            successMessage = "Order cancelled successfully!";
+            await LoadOrders();
+        }
+        else
+        {
+            errorMessage = error;
+        }
+
+        isCancelling = false;
+        cancellingOrderId = 0;
     }
 
     private async Task InitializeSignalR()

@@ -22,6 +22,10 @@ public class Order
     [Required]
     public string EstimatedTime { get; set; } = string.Empty;
     
+    // Optional delivery instructions (e.g., "Call when you arrive")
+    [StringLength(500)]
+    public string? DeliveryInstructions { get; set; }
+    
     // Order status: "Pending", "In Progress", "Completed"
     [Required]
     public string Status { get; set; } = "Pending";

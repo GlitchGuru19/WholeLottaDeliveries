@@ -4,6 +4,7 @@ using DeliveryApp.Hubs;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using WholeLottaDeliveries.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -29,6 +30,9 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 builder.Services.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuthenticationStateProvider>();
 builder.Services.AddSignalR();
 builder.Services.AddCascadingAuthenticationState();
+
+// Register custom services
+builder.Services.AddScoped<OrderService>();
 
 var app = builder.Build();
 

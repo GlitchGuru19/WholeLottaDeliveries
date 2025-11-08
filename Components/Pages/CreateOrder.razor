@@ -1,12 +1,10 @@
 @page "/create-order"
-@using Microsoft.AspNetCore.Identity
-@using Microsoft.AspNetCore.SignalR.Client
+@using WholeLottaDeliveries.Models
+@using WholeLottaDeliveries.Services
 @attribute [Authorize(Roles = "User")]
-@inject ApplicationDbContext DbContext
-@inject UserManager<ApplicationUser> UserManager
+@inject OrderService OrderService
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NavigationManager Navigation
-@inject IHubContext<OrderHub> HubContext
 @rendermode InteractiveServer
 
 <PageTitle>Create Order - Delivery App</PageTitle>
@@ -53,8 +51,31 @@
             <ValidationMessage For="@(() => orderModel.EstimatedTime)" />
         </div>
 
+        <div class="form-group">
+            <label for="instructions">Delivery Instructions (Optional)</label>
+            <InputTextArea id="instructions" @bind-Value="orderModel.DeliveryInstructions" class="form-control" rows="3" placeholder="e.g., Call when you arrive, Room 204 Block A, Leave at the gate" />
+            <ValidationMessage For="@(() => orderModel.DeliveryInstructions)" />
+        </div>
+
+        @if (!string.IsNullOrEmpty(orderModel.Location))
+        {
+            <div class="delivery-fee-display">
+                <strong>Estimated Delivery Fee:</strong> @($"K{orderModel.GetDeliveryFee():0.00}")
+            </div>
+        }
+
         <div class="form-actions">
-            <button type="submit" class="btn btn-primary">Submit Order</button>
+            <button type="submit" class="btn btn-primary" disabled="@isSubmitting">
+                @if (isSubmitting)
+                {
+                    <span class="spinner"></span>
+                    <span>Submitting...</span>
+                }
+                else
+                {
+                    <span>Submit Order</span>
+                }
+            </button>
             <a href="/dashboard" class="btn btn-secondary">Cancel</a>
         </div>
     </EditForm>
@@ -66,57 +87,36 @@
     
     private string? successMessage;
     private string? errorMessage;
+    private bool isSubmitting = false;
 
     private async Task HandleCreateOrder()
     {
-        try
+        isSubmitting = true;
+        errorMessage = null;
+        
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var userId = authState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
+        if (string.IsNullOrEmpty(userId))
         {
-            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-            var user = await UserManager.GetUserAsync(authState.User);
+            errorMessage = "User not found. Please log in again.";
+            isSubmitting = false;
+            return;
+        }
 
-            if (user == null)
-            {
-                errorMessage = "User not found. Please log in again.";
-                return;
-            }
+        var (success, error) = await OrderService.CreateOrderAsync(userId, orderModel);
 
-            var order = new Order
-            {
-                UserId = user.Id,
-                Description = orderModel.Description,
-                Location = orderModel.Location,
-                EstimatedTime = orderModel.EstimatedTime,
-                Status = "Pending",
-                CreatedAt = DateTime.Now
-            };
-
-            DbContext.Orders.Add(order);
-            await DbContext.SaveChangesAsync();
-
-            await HubContext.Clients.All.SendAsync("ReceiveOrderUpdate", "New order created");
-
+        if (success)
+        {
             successMessage = "Order created successfully!";
             orderModel = new();
-            
             await Task.Delay(2000);
             Navigation.NavigateTo("/dashboard");
         }
-        catch (Exception ex)
+        else
         {
-            errorMessage = $"Error creating order: {ex.Message}";
+            errorMessage = error;
+            isSubmitting = false;
         }
-    }
-
-    public class OrderModel
-    {
-        [Required(ErrorMessage = "Please describe what you need")]
-        [StringLength(1000, MinimumLength = 5)]
-        public string Description { get; set; } = string.Empty;
-
-        [Required(ErrorMessage = "Please select a delivery location")]
-        public string Location { get; set; } = string.Empty;
-
-        [Required(ErrorMessage = "Please enter the time you need the items")]
-        public string EstimatedTime { get; set; } = string.Empty;
     }
 }
