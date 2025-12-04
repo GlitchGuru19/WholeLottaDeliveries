@@ -97,7 +97,8 @@ Users can register their own accounts through the Register page.
    - Choose estimated time needed
    - Submit order
 4. **View Orders**: Check your orders at "My Orders" or `/dashboard`
-5. **Track Status**: Watch real-time status updates
+5. **Filter Orders**: Use tabs to filter by status
+6. **Track Status**: Watch real-time status updates
 
 ### For Admin:
 
