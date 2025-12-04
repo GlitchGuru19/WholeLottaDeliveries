@@ -45,7 +45,7 @@ featuring real-time order tracking, user authentication, and role-based access c
 ### 1. Clone or Navigate to the Project
 
 ```bash
-"(https://github.com/GlitchGuru19/WholeLottaDeliveries"
+"https://github.com/GlitchGuru19/WholeLottaDeliveries"
 ```
 
 ### 2. Restore Dependencies
