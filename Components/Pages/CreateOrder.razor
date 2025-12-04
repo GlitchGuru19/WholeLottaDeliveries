@@ -53,7 +53,7 @@
 
         <div class="form-group">
             <label for="instructions">Delivery Instructions (Optional)</label>
-            <InputTextArea id="instructions" @bind-Value="orderModel.DeliveryInstructions" class="form-control" rows="3" placeholder="e.g., Call when you arrive, Room 204 Block A, Leave at the gate" />
+            <InputTextArea id="instructions" @bind-Value="orderModel.DeliveryInstructions" class="form-control" rows="3" placeholder="e.g., Call when you arrive, Room 2 Block A" />
             <ValidationMessage For="@(() => orderModel.DeliveryInstructions)" />
         </div>
 

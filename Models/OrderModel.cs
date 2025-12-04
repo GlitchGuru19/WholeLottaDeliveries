@@ -23,7 +23,7 @@ public class OrderModel
     public string EstimatedTime { get; set; } = string.Empty;
 
     // Optional delivery instructions for special requests
-    // Examples: "Call when you arrive", "Room 204, Block A", "Leave at the gate"
+    // Examples: "Call when you arrive", "Room 2, Block A"
     [StringLength(500)]
     public string? DeliveryInstructions { get; set; }
 

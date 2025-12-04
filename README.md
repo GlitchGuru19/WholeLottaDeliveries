@@ -13,6 +13,7 @@ featuring real-time order tracking, user authentication, and role-based access c
   - Time needed (e.g., "2:30 PM", "14:30")
 - **Order Dashboard**: View all personal orders with real-time status updates
 - **Status Tracking**: Monitor orders through Pending → In Progress → Completed
+- **Order Cancellation**: Orders can be cancelled if they are still pending
 
 ### 🧑‍💼 Admin Features
 - **Admin Dashboard**: View all orders from all users
@@ -44,7 +45,7 @@ featuring real-time order tracking, user authentication, and role-based access c
 ### 1. Clone or Navigate to the Project
 
 ```bash
-cd "d:\Everything C#\Blazor\DeliveryApp"
+cd "https:"
 ```
 
 ### 2. Restore Dependencies
